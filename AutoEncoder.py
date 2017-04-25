@@ -73,12 +73,14 @@ class AdditiveGaussianNoiseAutoencoder(object):
 
 mnist=input_data.read_data_sets('MNIST_data',one_hot=True)
 
+#对数据进行标准化处理
 def standard_scale(X_train,X_test):
     preprocessor=prep.StandardScaler().fit(X_train)
     X_train=preprocessor.transform(X_train)
     X_test=preprocessor.transform(X_test)
     return X_train,X_test
-optimizer
+
+#获取随机block数据
 def get_random_block_from_data(data,batch_size):
     start_index=np.random.randint(0,len(data)-batch_size)
     return data[start_index:(start_index+batch_size)]
@@ -86,7 +88,7 @@ def get_random_block_from_data(data,batch_size):
 X_train,X_test=standard_scale(mnist.train.images,mnist.test.images)
 
 n_samples=int(mnist.train.num_examples)
-training_epochs=20
+training_epochs=20      #最大训练轮数
 batch_size=128
 display_step=1
 
@@ -104,4 +106,5 @@ for epoch in range(training_epochs):
     if epoch%display_step==0:
     	print("Epoch",'%04d' % (epoch+1),"cost=","{:.9f}".format(avg_cost))
 
+#使用测试集对模型的性能进行测试
 print("Total cost:"+str(autoencoder.calc_total_cost(X_test)))
