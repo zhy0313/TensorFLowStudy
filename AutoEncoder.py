@@ -3,6 +3,7 @@ import sklearn.preprocessing as prep
 import tensorflow as tf 
 from tensorflow.examples.tutorials.mnist import input_data
 
+#标准的均匀分布的Xaiver初始化器
 def xavier_init(fan_in,fan_out,constant=1):
     low=-constant*np.sqrt(6.0/(fan_in+fan_out))
     high=constant*np.sqrt(6.0/(fan_in+fan_out))
@@ -95,4 +96,3 @@ for epoch in range(training_epochs):
     	print("Epoch",'%04d' % (epoch+1),"cost=","{:.9f}".format(avg_cost))
 
 print("Total cost:"+str(autoencoder.calc_total_cost(X_test)))
-
