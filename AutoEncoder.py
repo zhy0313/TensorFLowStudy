@@ -19,18 +19,21 @@ class AdditiveGaussianNoiseAutoencoder(object):
         self.training_scale=scale            #高斯噪声系数
         network_weights=self._initialize_weights()
         self.weights=network_weights
-
         self.x=tf.placeholder(tf.float32,[None,self.n_input])
         #隐含层
-        self.hidden=self.transfer(tf.add(tf.matmul(self.x+scale*tf.random_uniform((n_input,)),self.weights['w1']),self.weights['b1']))
+        self.hidden=self.transfer(tf.add(tf.matmul(self.x+scale*tf.random_uniform((n_input,)),self.weights['w1']),
+                                         self.weights['b1']))
         #输出层数据复原、重建
         self.reconstruction=tf.add(tf.matmul(self.hidden,self.weights['w2']),self.weights['b2'])
+        #使用平方误差作为损失函数cost
         self.cost=0.5*tf.reduce_sum(tf.pow(tf.subtract(self.reconstruction,self.x),2.0))
+        #定义优化器对损失进行优化
         self.optimizer=optimizer.minimize(self.cost)
         init=tf.global_variables_initializer()
         self.sess=tf.Session()
         self.sess.run(init)
 
+    #参数初始化函数
     def _initialize_weights(self):
     	all_weights=dict()
     	all_weights['w1']=tf.Variable(xavier_init(self.n_input,self.n_hidden))
@@ -39,16 +42,20 @@ class AdditiveGaussianNoiseAutoencoder(object):
     	all_weights['b2']=tf.Variable(tf.zeros([self.n_input],dtype=tf.float32))
     	return all_weights
 
+    #用一个batch数据进行训练并返回当前的损失cost
     def partial_fit(self,X):
     	cost,opt=self.sess.run((self.cost,self.optimizer),feed_dict={self.x:X,self.scale:self.training_scale})
     	return cost
 
+    #在测试集上对模型性能进行评测
     def calc_total_cost(self,X):
     	return self.sess.run(self.cost,feed_dict={self.x:X,self.scale:self.training_scale})
 
+    #获取抽象后的隐含层特征
     def transform(self,X):
     	return self.sess.run(self.hidden,feed_dict={self.x:X,self.scale:self.training_scale})
 
+    #由隐含层重建原始数据
     def generate(self,hidden=None):
     	if hidden is None:
     	    hidden=np.random.normal(size=self.weights["b1"])
@@ -71,7 +78,7 @@ def standard_scale(X_train,X_test):
     X_train=preprocessor.transform(X_train)
     X_test=preprocessor.transform(X_test)
     return X_train,X_test
-
+optimizer
 def get_random_block_from_data(data,batch_size):
     start_index=np.random.randint(0,len(data)-batch_size)
     return data[start_index:(start_index+batch_size)]
