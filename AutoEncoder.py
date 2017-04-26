@@ -3,6 +3,8 @@ import sklearn.preprocessing as prep
 import tensorflow as tf 
 from tensorflow.examples.tutorials.mnist import input_data
 
+#单隐含层的加性高斯噪声自编码器
+
 #标准的均匀分布的Xaiver初始化器
 def xavier_init(fan_in,fan_out,constant=1):
     low=-constant*np.sqrt(6.0/(fan_in+fan_out))
@@ -31,7 +33,7 @@ class AdditiveGaussianNoiseAutoencoder(object):
         self.optimizer=optimizer.minimize(self.cost)
         init=tf.global_variables_initializer()
         self.sess=tf.Session()
-        self.sess.run(init)
+        self.sess.run(init)https://www.tensorflow.org/versions/master/how_tos/graph_viz/index.html
 
     #参数初始化函数
     def _initialize_weights(self):
