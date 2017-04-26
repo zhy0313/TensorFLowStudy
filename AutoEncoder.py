@@ -33,7 +33,7 @@ class AdditiveGaussianNoiseAutoencoder(object):
         self.optimizer=optimizer.minimize(self.cost)
         init=tf.global_variables_initializer()
         self.sess=tf.Session()
-        self.sess.run(init)https://www.tensorflow.org/versions/master/how_tos/graph_viz/index.html
+        self.sess.run(init)
 
     #参数初始化函数
     def _initialize_weights(self):
