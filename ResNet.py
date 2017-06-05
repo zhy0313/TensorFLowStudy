@@ -10,15 +10,34 @@ slim=tf.contrib.slim
 class Block(collections.namedtuple('Block',['scope','unit_fn','args'])):
     'A named tuple describing a ResNet block.'
 
-#降采样函数
+
 def subsample(inputs,factor,scope=None):
+    '''
+    将采样函数.
+    '''
     if factor==1:
         return inputs
     else:
         return slim.max_pool2d(inputs,[1,1],stride=factor,scope=scope)
 
-#卷积函数
 def conv2d_same(inputs,num_outputs,kernel_size,stride,scope=None):
+    '''
+    Strided 2-D convolution with 'SAME' padding.
+    When stride > 1, then we do explicit zero-padding, followed by conv2d with 'VALID' padding.
+    Note that
+         net = conv2d_same(inputs, num_outputs, 3, stride=stride)
+    is equivalent to
+         net = slim.conv2d(inputs, num_outputs, 3, stride=1, padding='SAME')
+         net = subsample(net, factor=stride)
+         
+    :param inputs: 输入tensor
+    :param num_outputs: 输出通道数
+    :param kernel_size: 卷积核尺寸
+    :param stride: 步长
+    :param scope: Scope
+    :return: 卷积输出
+    '''
+
     if stride==1:
         return slim.conv2d(inputs,num_outputs,kernel_size,stride=1,padding='SAME',scope=scope)
     else:
@@ -30,6 +49,7 @@ def conv2d_same(inputs,num_outputs,kernel_size,stride,scope=None):
 
 @slim.add_arg_scope
 def stack_blocks_dense(net,blocks,outputs_collections=None):
+    '循环堆叠Blocks'
     for block in blocks:
         with tf.variable_scope(block.scope,'block',[net]) as sc:
             for i,unit in enumerate(block.args):
@@ -61,11 +81,14 @@ def resnet_arg_scope(is_training=True,weight_decay=0.0001,batch_norm_decay=0.997
 
 @slim.add_arg_scope
 def bottleneck(inputs,depth,depth_bottleneck,stride,outputs_collections=None,scope=None):
+    '定义残差学习单元'
     with tf.variable_scope(scope,'bottleneck_v2',[inputs]) as sc:
+        #输入通道数
         depth_in=slim.utils.last_dimension(inputs.get_shape(),min_rank=4)
+        #对输入进行预激活
         preact=slim.batch_norm(inputs,activation_fn=tf.nn.relu,scope='preact')
         if depth==depth_in:
-            shortcut=subsample(inputs,stride,'shortcut')
+            shortcut=subsample(preact,stride,'shortcut')
         else:
             shortcut=slim.conv2d(preact,depth,[1,1],stride=stride,normalizer_fn=None,activation_fn=None,scope='shortcut')
         residual=slim.conv2d(preact,depth_bottleneck,[1,1],stride=1,scope='conv1')
@@ -76,6 +99,17 @@ def bottleneck(inputs,depth,depth_bottleneck,stride,outputs_collections=None,sco
         return slim.utils.collect_named_outputs(outputs_collections,sc.name,output)
 
 def resnet_v2(inputs,blocks,num_classes=None,global_pool=True,include_root_block=True,reuse=None,scope=None):
+    '''
+    生成ResNet v2的主函数
+    
+    :param inputs: 输入tensor
+    :param blocks: Block类列表
+    :param num_classes: 分类数
+    :param global_pool: 是否加上最后的全局平局池化
+    :param include_root_block: 是否加上网络最前面通常使用的7x7卷积和最大池化
+    :param reuse: 是否重用
+    :param scope: 网络名称
+    '''
     with tf.variable_scope(scope,'resnet_v2',[inputs],reuse=reuse) as sc:
         end_points_collection=sc.original_name_scope+'_end_points'
         with slim.arg_scope([slim.conv2d,bottleneck,stack_blocks_dense],outputs_collections=end_points_collection):
@@ -163,5 +197,7 @@ with slim.arg_scope(resnet_arg_scope(is_training=False)):
 init=tf.global_variables_initializer()
 sess=tf.Session()
 sess.run(init)
+#sess.run(net)
+#train_writer=tf.summary.FileWriter('/tmp/alog',sess.graph)
 num_batches=100
 time_tensorflow_run(sess,net,"Forward")
